@@ -1,0 +1,312 @@
+---
+title: "assessmentPap"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("~/Assessment/FunRs.R")
+```
+
+##Question 1
+There are 39644 record in the data set. I checked different ways each giving me the same result, indicating that the records are unique. For example: 
+```{r reading}
+NewsData <- read.csv("~/Assessment/Data/OnlineNewsPopularity/OnlineNewsPopularity.csv", stringsAsFactors = FALSE)
+dim(NewsData)
+sum(duplicated(NewsData))
+```
+There are 39644 urls in the data, and time frame is "2013-01-07" "2014-12-27".
+```{r urls}
+library(stringr)
+urls <- NewsData$url
+length(urls)
+x <-as.Date(str_extract(urls[1:length(urls)],"[0-9]{4}/[0-9]{2}/[0-9]{2}"),"%Y/%m/%d")
+x<-sort(x)
+x[c(1,length(urls))]
+```
+##Question 2
+```{r histogram}
+hist(NewsData$timedelta, right = FALSE, col = "cyan", main = "Histogram of timedelta column")
+```
+
+The histogram indicates an almost uniform distribution of timedelta.
+
+A part of the question asks *does it changes overtime*. It is not very obvious what "it" refers to. Does the histogram, distribution of the acquisition time (timedeta) change? Does the acquisition time itself changes?
+Here I have the monthly average of timedeta:
+```{r monthlyAvetime}
+library(tidyverse)
+library(knitr)
+Date <-as.Date(str_extract(urls[1:length(urls)],"[0-9]{4}/[0-9]{2}/[0-9]{2}"),"%Y/%m/%d")
+NewsDataD <- cbind.data.frame(NewsData,Date,year = as.numeric(format(Date, format = "%Y")),
+                 month = as.numeric(format(Date, format = "%m")),
+                 day = as.numeric(format(Date, format = "%d")))
+by_month <- group_by(NewsDataD,year,month)
+  res <-summarise(by_month, Avetime = mean(timedelta))
+  kable(res)
+```
+and we can plot this data:
+```{r ploting}
+library(zoo)
+res$Date <- as.yearmon(paste(res$year,res$month, sep = "-"))
+head(res,2)
+plot(res$Avetime~res$Date)
+```
+
+There is a steep drop in the days until acqusition as time has gone by. This makes sense since the publisher has gotten more mature and gained more experience and the delay between publishing time and acqusition time has decreased. 
+
+
+
+## Question 3
+The function *topic_extract* is written to extract the topic, as it is defined in question 3, from a given url:
+```{r extractTopics}
+ExtractedTopics <- lapply(urls,topic_extract) %>% unlist()
+head(ExtractedTopics,4)
+sum(duplicated(ExtractedTopics))
+```
+I built a frequency table, used loops to detect and count any possible multiple occurances of a topic, and checked with duplicated function of R. All indicate that there is no multi-occurance and the frequency of each topic is exactly 1. 
+
+##Question 4
+The little one liner function *is_it_there* returns TRUE if a substring is in a given string, if not it returns FALSE. We use this function to answer this question.
+```{r substring_in_there}
+s <- c("elon-musk", "facebook", "ebola", "ipad", "iphone", "tornado", "sharknado", "taylor-swift")
+res <- lapply(ExtractedTopics,is_in_there,s)
+x <- setNames(do.call(rbind.data.frame,res),s)
+t <- apply(x,2,sum)
+kable(t)
+```
+
+I think the results makes sense. For example, Facebook is a very popular webpage and one should think there would be a lot of news worthy events which make Facebook appear in the news very often. Adding to this, is the period which the data covers. This is the time period in which facebook filed for IPO and went public. The debut was a little bumpy and stock prices gyrated which all contributed to facebook being in the news quite a bit. 
+
+Another example is *ebola*. This was the period in which there was a severe outbreak of the desease that made the word very news worthy. 
+
+##Question 5
+First the groupping and calculations:
+
+```{r monthlyGrain}
+library(lubridate)
+NewsDataDT <- cbind.data.frame(NewsDataD,ExtractedTopics)
+x <- with(NewsDataDT,split(ExtractedTopics,list(year,month)))
+sn <- paste(names(x),"1",sep = ".") %>% ymd() %>% sort()
+sn <- sub("\\.0",".",sub("-",".",sub("-01$","",sn)))
+```
+
+We can build monthly tables. The following snippet produces the table that can be later be extracted and presented if neccessary.
+```{r monthlytables}
+tables <- list()
+s <- c("elon-musk", "facebook", "ebola", "ipad", "iphone", "tornado", "sharknado", "taylor-swift")
+for(n in sn){
+  res <- lapply(as.vector(x[[n]]),is_in_there,s)
+  df <- setNames(do.call(rbind.data.frame,res),s)
+  t <- apply(df,2,sum)
+  t <- as.data.frame(t)
+  tables[[n]] <- t
+}
+```
+Here are the a few of the tables:
+
+```{r tables}
+library(gridExtra)
+for(i in 1:4)
+grid.arrange(tableGrob(tables[[i]],cols = sn[i]),nrow = 1)
+```
+
+The frequency changes from month-to-month based on events that happened in that month. For example a month in which a new iphone has been released shows a spike in the iphone frequency. Here is two graphs showing the changes in frequency over time. Again, we can see from this graph that there are jumps in popularity around the times of major events. The noticable exception is facebook that enjoys a high ans stable popularity over time. 
+
+```{r graphs}
+x <- with(NewsDataDT,split(ExtractedTopics,list(year,month)))
+sd <- paste(names(x),"1",sep = ".") %>% ymd() %>% sort()
+sd <- as.Date(sd)
+
+p1 <- c("ipad","ebola","iphone","facebook")
+Numof_ph <- lapply(p1,phrase_num)
+df <- data.frame(Numof_ph[[1]]$Date)
+for(i in 1:length(Numof_ph)){
+  df <- cbind.data.frame(df,Numof_ph[[i]][,2])
+}
+n <- c("Date",p1)
+colnames(df) <- n
+df$Date <- sd
+xx <- df %>% gather(name,count,ipad:facebook)
+g1 <- ggplot(data = xx, aes(x = Date, y = count, group = name, colour = name)) +geom_line()+geom_point()+scale_x_date(date_labels = "%b-%y")+xlab("")
+
+
+p2 <- c("elon-musk","tornado","sharknado","taylor-swift")
+Numof_ph2 <- lapply(p2,phrase_num)
+df2 <- data.frame(Numof_ph2[[1]]$Date)
+for(i in 1:length(Numof_ph2)){
+  df2 <- cbind.data.frame(df2,Numof_ph2[[i]][,2])
+}
+n2 <- c("Date",p2)
+colnames(df2) <- n2
+df2$Date <- sd
+xx2 <- df2 %>% gather(name,count,2:5)
+g2 <- ggplot(data = xx2, aes(x = Date, y = count, group = name, colour = name)) +geom_line()+geom_point()+scale_x_date(date_labels = "%b-%y")+xlab("")
+
+#putting two graphs together
+grid.arrange(g1, g2, ncol=1)
+```
+
+
+##Question 6
+We first perform that calculations and then follow that with a discussion. 
+```{r Q6}
+dayN <- c("weekday_is_sunday", "weekday_is_monday", "weekday_is_tuesday","weekday_is_wednesday","weekday_is_thursday","weekday_is_friday","weekday_is_saturday")
+dayData <- NewsData[,dayN]
+df <- apply(dayData,2,sum)
+#sum(df/7)
+kable(df, caption = "Total urls")
+```
+
+From the data one can observe that number of shared urls are almost the same during the weekdays, but start to go down on friday. During the weekend activities are less than half of a typical weekday. This finding is what one normally expects. 
+
+Another way to see this result is to look at the averages. On average 5663 URLs are shared each day. The weekend averge of 2595 is well below this number and the weekday average of 6891, is well above it.
+
+For others we use a little function in FunRs.R, *Forq6_8* to summerize the results and answer the questions.
+
+```{r aveNumViod}
+results <- Forq6_8("num_videos")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "num_videos")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+For Average num_images:
+
+```{r avenumim}
+results <- Forq6_8("num_imgs")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "num_imgs")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+For Average abs_title_subjectivity:
+
+```{r AveSubj}
+results <- Forq6_8("abs_title_subjectivity")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "abs_title_subjectivity")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+Average abs_title_sentiment_polarity:
+
+```{r AvePol}
+results <- Forq6_8("abs_title_sentiment_polarity")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "abs_title_sentiment_polarity")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+Looking at the results we realize that overall activity on the weekend is well below the activity on the weekdays for all these categories. 
+ Here is summaraized results:
+ 
+```{r summary}
+Type_of_Ave <-c("Daily_Ave","Weekday_Ave","Weekend_Ave")
+Total_urls <- c(5663,6891,2595)
+num_images <- c(25735.43,30129.6,14750)
+num_videos <- c(7078.571,8789,2802.5)
+abs_title_subjectivity <- c(1936,2373.25,842.88)
+abs_title_sentiment<- c(883.86,1053.32,460.19)
+Averages <- rbind.data.frame(Total_urls,num_images,num_videos,abs_title_subjectivity,abs_title_sentiment)
+colnames(Averages)<-Type_of_Ave
+Averages <- cbind.data.frame(Parameter = c('Total_urls','num_images','num_videos','abs_title_subjectivity','abs_title_sentiment'),Averages)
+kable(Averages)
+meltedData <- Averages %>% gather(Type,Values,2:4)
+g3 <- ggplot(meltedData
+             ,aes(Parameter, Values, fill = Type))+geom_bar(stat ='identity', position = 'dodge')
+g3 <- g3+scale_x_discrete(labels = c("title_senti","title_subj","num_imgs","num_vid","total_urls"))+xlab("")
+g3
+```
+
+##Question 7
+First we perform the calculations and then will analyze the results. These are for data channels of Entertainment, Lifestyle, Tech and World. Since they all use the same code, I suppress the codes to be printed.
+
+```{r, ch_is_lifestyle, echo=FALSE}
+results <- Forq6_8("data_channel_is_lifestyle")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "data_channel_is_lifestyle")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+```{r,echo =FALSE}
+results <- Forq6_8("data_channel_is_entertainment")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "data_channel_is_entertainment")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+
+```{r, echo=FALSE}
+results <- Forq6_8("data_channel_is_tech")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "data_channel_is_tech")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+```{r,echo=FALSE}
+results <- Forq6_8("data_channel_is_world")
+Daily_Ave <- results$aved
+Weekday_Ave <- results$avweekd
+Weekend_Ave <- results$avweekendd
+kable(results$dayofweek,caption = "data_channel_is_world")
+Daily_Ave
+Weekday_Ave
+Weekend_Ave
+```
+
+Again the observation is the same. The activities in the weeked days are substantially below those of weekdays. 
+
+Here is summary of the results:
+```{r summ}
+data_channel_is_lifestyle <-c(299.86,341.4,196)
+data_channel_is_entertainment <-c(1008.14,1228.2,458)
+data_channel_is_tech<-c(1049.43,1285,460.5)
+data_channel_is_world<-c(1203.86,1468.2,543)
+Averages <- rbind.data.frame(data_channel_is_lifestyle,data_channel_is_entertainment,data_channel_is_tech,data_channel_is_world)
+colnames(Averages)<-Type_of_Ave
+Averages <- cbind.data.frame(Parameter = c('data_channel_is_lifestyle','data_channel_is_entertainment','data_channel_is_tech','data_channel_is_world'),Averages)
+kable(Averages)
+meltedData <- Averages %>% gather(Type,Values,2:4)
+g4 <- ggplot(meltedData
+             ,aes(Parameter, Values, fill = Type))+geom_bar(stat ='identity', position = 'dodge')
+g4 <- g4+scale_x_discrete(labels = c("lifestyle","entertainment","tech","world"))+xlab("")
+g4
+```
+
+
+
+##Question 8
+I was expecting to see a difference between results of some of the question 7 and 6. One thinks entertaiment and lifestyle are type of news that people pay more attention in the weekend, and therefore should be a higher sharing of them.
+ 
+I think after all most people, including media and news works, are off on weekend are they rather to spend time with family and things like that. Therefore the overal activity derops in the weekends. One can guess that some people shift and prepare what should be consumed for the weekends in the weekdays. 
+
+
+

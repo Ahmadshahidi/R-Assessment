@@ -1,0 +1,21 @@
+"0","library(tidyverse)"
+"2","Loading tidyverse: ggplot2
+Loading tidyverse: tibble
+Loading tidyverse: tidyr
+Loading tidyverse: readr
+Loading tidyverse: purrr
+Loading tidyverse: dplyr
+"
+"2","Conflicts with tidy packages -------------------------------------------------------------------------------
+"
+"2","filter(): dplyr, stats
+lag():    dplyr, stats
+"
+"0","library(knitr)"
+"0","Date <-as.Date(str_extract(urls[1:length(urls)],""[0-9]{4}/[0-9]{2}/[0-9]{2}""),""%Y/%m/%d"")"
+"0","NewsDataD <- cbind.data.frame(NewsData,Date,year = as.numeric(format(Date, format = ""%Y"")),"
+"0","                 month = as.numeric(format(Date, format = ""%m"")),"
+"0","                 day = as.numeric(format(Date, format = ""%d"")))"
+"0","by_month <- group_by(NewsDataD,year,month)"
+"0","  res <-summarise(by_month, Avetime = mean(timedelta))"
+"0","  kable(res)"

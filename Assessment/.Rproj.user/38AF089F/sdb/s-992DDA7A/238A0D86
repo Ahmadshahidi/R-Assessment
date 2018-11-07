@@ -1,0 +1,20 @@
+{
+    "collab_server" : "",
+    "contents" : "#############################\n#This Function is used to extract the title-topic from urls\ntopic_extract <- function(url){\n  REG_EXPR <- \"[^/]+?/$\"\n  first_part <- sub(REG_EXPR,\"\",url)\n  last_part <- sub(first_part,\"\",url)\n  last_part <- sub(\"/$\",\"\",last_part)\n  return(last_part)\n}\n\nis_in_there <- function(topic,s){\n  return(str_detect(topic,s))\n}\n\nForq6_8 <- function(clname,df=NewsData){\n  res <- list()\n  d <-c(\"weekday_is_sunday\", \"weekday_is_monday\", \"weekday_is_tuesday\",\"weekday_is_wednesday\",\n        \"weekday_is_thursday\",\"weekday_is_friday\",\"weekday_is_saturday\")\n  x <- df[,d]*df[,clname]\n  dayNum <-apply(x,2,sum)\n  res$dayofweek <- as.data.frame(dayNum); \n  avweekd <-res[[1]][c(\"weekday_is_monday\", \"weekday_is_tuesday\",\"weekday_is_wednesday\",\n                         \"weekday_is_thursday\",\"weekday_is_friday\"),]\n  avweekendd <- res[[1]][c(\"weekday_is_saturday\",\"weekday_is_sunday\"),]\n  aved <- res[[1]][d,]\n  res$avweekd <- sum(avweekd)/5\n  res$avweekendd <- sum(avweekendd)/2\n  res$aved <- sum(aved)/7\n  \n  return(res)\n  \n}\n\nphrase_num <- function(phrase,L=tables){\n  Date <- names(L)\n  numofph <- vector()\n  for(i in 1:length(L)){\n    numofph[i] <-L[[i]][phrase,]\n  }\n  \n  df <- cbind.data.frame(Date,numofph)\n  colnames(df) <- c(\"Date\",phrase)\n  return(df)\n}\n\n",
+    "created" : 1489647210081.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3911794449",
+    "id" : "238A0D86",
+    "lastKnownWriteTime" : 1490014614,
+    "last_content_update" : 1490014614677,
+    "path" : "~/Assessment/FunRs.R",
+    "project_path" : "FunRs.R",
+    "properties" : {
+    },
+    "relative_order" : 2,
+    "source_on_save" : true,
+    "source_window" : "",
+    "type" : "r_source"
+}

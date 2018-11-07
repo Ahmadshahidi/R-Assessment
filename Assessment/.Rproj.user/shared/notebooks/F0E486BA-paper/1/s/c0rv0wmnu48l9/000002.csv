@@ -1,0 +1,12 @@
+"0","library(zoo)"
+"2","
+Attaching package: ‘zoo’
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    as.Date, as.Date.numeric
+
+"
+"0","res$Date <- as.yearmon(paste(res$year,res$month, sep = ""-""))"
+"0","head(res,2)"

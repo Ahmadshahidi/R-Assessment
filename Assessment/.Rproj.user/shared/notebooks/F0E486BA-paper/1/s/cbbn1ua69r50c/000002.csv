@@ -1,0 +1,14 @@
+"0","library(lubridate)"
+"2","
+Attaching package: ‘lubridate’
+
+"
+"2","The following object is masked from ‘package:base’:
+
+    date
+
+"
+"0","NewsDataDT <- cbind.data.frame(NewsDataD,ExtractedTopics)"
+"0","x <- with(NewsDataDT,split(ExtractedTopics,list(year,month)))"
+"0","sn <- paste(names(x),""1"",sep = ""."") %>% ymd() %>% sort()"
+"0","sn <- sub(""\\.0"",""."",sub(""-"",""."",sub(""-01$"","""",sn)))"

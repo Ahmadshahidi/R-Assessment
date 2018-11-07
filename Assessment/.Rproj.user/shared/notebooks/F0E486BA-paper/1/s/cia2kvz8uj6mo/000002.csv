@@ -1,0 +1,5 @@
+"0","results <- Forq6_8(""num_imgs"")"
+"0","Daily_Ave <- results$aved"
+"0","Weekday_Ave <- results$avweekd"
+"0","Weekend_Ave <- results$avweekendd"
+"0","kable(results$dayofweek,caption = ""num_imgs"")"

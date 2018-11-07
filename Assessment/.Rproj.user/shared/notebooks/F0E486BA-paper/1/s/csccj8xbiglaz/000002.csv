@@ -1,0 +1,8 @@
+"0","s <- c(""elon-musk"", ""facebook"", ""ebola"", ""ipad"", ""iphone"", ""tornado"", ""sharknado"", ""taylor-swift"")"
+"0","res <- lapply(ExtractedTopics,is_in_there,s)"
+"0","x <- setNames(do.call(rbind.data.frame,res),s)"
+"0","t <- apply(x,2,sum)"
+"0","kable(t)"
+"2","Error in kable_markdown(x = c(""elon-musk"", ""facebook"", ""ebola"", ""ipad"",  : 
+  the table must have a header (column names)
+"

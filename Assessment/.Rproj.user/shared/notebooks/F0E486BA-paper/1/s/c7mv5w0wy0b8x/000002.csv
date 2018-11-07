@@ -1,0 +1,8 @@
+"0","dayN <- c(""weekday_is_sunday"", ""weekday_is_monday"", ""weekday_is_tuesday"",""weekday_is_wednesday"",""weekday_is_thursday"",""weekday_is_friday"",""weekday_is_saturday"")"
+"0","dayData <- NewsData[,dayN]"
+"0","df <- apply(dayData,2,sum)"
+"0","#sum(df/7)"
+"0","kable(df, caption = ""Total urls"")"
+"2","Error in kable_markdown(x = c(""weekday_is_sunday"", ""weekday_is_monday"",  : 
+  the table must have a header (column names)
+"

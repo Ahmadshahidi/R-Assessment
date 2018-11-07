@@ -1,0 +1,1 @@
+"0","hist(NewsData$timedelta, right = FALSE, col = ""cyan"", main = ""Histogram of timedelta column"")"
